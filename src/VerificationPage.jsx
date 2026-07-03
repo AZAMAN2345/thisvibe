@@ -64,7 +64,12 @@ export default function VerificationPage({ email, setupToken, verificationUrl, e
         {verificationUrl && (
           <a className="verification-dev-link" href={verificationUrl} target="_blank" rel="noreferrer">Open verification link</a>
         )}
-        <button className="verification-back" onClick={onBackToSignIn}>Back to sign in</button>
+        <button className="verification-back" onClick={onBackToSignIn} aria-label="Back to sign in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+        </button>
       </section>
     </main>
   );

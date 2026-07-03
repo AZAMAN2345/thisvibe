@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Clock3,
   Gamepad2,
   Mars,
   MapPin,
   Maximize2,
-  MessageCircle,
   Minimize2,
   SkipForward,
   Star,
@@ -13,7 +11,6 @@ import {
   Users,
   UsersRound,
   Venus,
-  VideoOff,
   X,
 } from "lucide-react";
 import { useWebRTC } from "./useWebRTC";
@@ -114,6 +111,30 @@ function LocalVideo({ className, stream, muted = true, mirror = false }) {
 //MARK: ── RemoteVideo ───────────────────────────────────────────
 // Same as LocalVideo but NOT muted (we want to hear them)
 // and shows a "Connecting…" state while the stream arrives.
+function CameraUnavailableIcon({ className = "" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="24" y="34" width="42" height="34" rx="8" fill="currentColor" />
+      <path
+        d="M69 45 L84 36 C87 34 90 36 90 40 V62 C90 66 87 68 84 66 L69 57 Z"
+        fill="currentColor"
+      />
+      <path
+        d="M20 19 L81 80"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function RemoteVideo({ stream, label = "Stranger" }) {
   const hasStream = Boolean(stream);
 
@@ -342,8 +363,13 @@ function MessageDock({
 
 // ── GroupLobby ────────────────────────────────────────────
 // Unchanged from previous version.
-function GroupLobby({ onJoin, onNavigateToPlus, onCreateInvite }) {
-  const [selectedSize, setSelectedSize] = useState(2);
+function GroupLobby({
+  selectedSize,
+  onSizeChange,
+  onJoin,
+  onNavigateToPlus,
+  onCreateInvite,
+}) {
   const [selectedGame, setSelectedGame] = useState("hotseat");
   const [copied, setCopied] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
@@ -372,21 +398,21 @@ function GroupLobby({ onJoin, onNavigateToPlus, onCreateInvite }) {
   return (
     <div className="group-lobby">
       <div className="gl-section">
-        <p className="gl-section-label">HOW MANY STRANGERS?</p>
+        <p className="gl-section-label">GROUP SCREENS</p>
         <div className="gl-size-grid">
           {[
-            { n: 2, desc: "You + 2 others", locked: false },
-            { n: 3, desc: "You + 3 others", locked: false },
+            { n: 2, desc: "2 screens", locked: false },
+            { n: 3, desc: "3 screens", locked: false },
             { n: 4, desc: "Full squad", locked: true },
           ].map(({ n, desc, locked }) => (
             <div
               key={n}
               className={`gl-size-card ${selectedSize === n && !locked ? "chosen" : ""} ${locked ? "locked" : ""}`}
-              onClick={() => !locked && setSelectedSize(n)}
+              onClick={() => !locked && onSizeChange(n)}
             >
               {locked && <span className="gl-plus-tag">PLUS</span>}
               <div className="gl-size-faces">
-                {Array.from({ length: n + 1 }).map((_, i) => (
+                {Array.from({ length: n }).map((_, i) => (
                   <div key={i} className="gl-face" />
                 ))}
               </div>
@@ -642,6 +668,7 @@ export default function DashboardPage({
   const [matchMode, setMatchMode] = useState(
     initialMatchMode === "GROUP" ? "GROUP" : "SOLO",
   );
+  const [groupSize, setGroupSize] = useState(2);
   const [selectedGame, setSelectedGame] = useState("hotseat");
   const [prefOpen, setPrefOpen] = useState(false);
   const [gender, setGender] = useState("Anyone");
@@ -1194,30 +1221,39 @@ export default function DashboardPage({
               <button
                 className={`call-top-pill ${friendsOpen ? "active" : ""}`}
                 type="button"
+                aria-label="Friend List"
                 onClick={() => {
                   setFriendsOpen((open) => !open);
                   setProfileOpen(false);
                 }}
               >
                 <UsersRound size={17} strokeWidth={2.2} />
-                Friend List
               </button>
               {friendsOpen && <FriendsDropdown friends={friends} />}
             </div>
-            <button className="call-top-pill" type="button">
-              <Clock3 size={17} strokeWidth={2.2} />
-              Call History
+            <button className="call-top-pill" type="button" aria-label="Call History">
+              <img
+                src="/recent-clock-icon.png"
+                alt=""
+                className="top-action-icon-img"
+                aria-hidden="true"
+              />
             </button>
             <button
               className="call-top-icon"
               aria-label="Messages"
               type="button"
             >
-              <MessageCircle size={17} strokeWidth={2.2} />
+              <img
+                src="/message-send-icon.png"
+                alt=""
+                className="top-action-icon-img"
+                aria-hidden="true"
+              />
             </button>
             <div className="profile-menu-wrap">
               <button
-                className={`call-top-icon ${profileOpen ? "active" : ""}`}
+                className={`call-top-icon profile-avatar-trigger ${profileOpen ? "active" : ""}`}
                 aria-label="Profile"
                 type="button"
                 onClick={() => {
@@ -1225,7 +1261,26 @@ export default function DashboardPage({
                   setFriendsOpen(false);
                 }}
               >
-                <User size={18} strokeWidth={2.2} />
+                <svg
+                  className="profile-avatar-icon"
+                  viewBox="0 0 100 100"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="46"
+                    fill="#7c3aed"
+                    stroke="#05020f"
+                    strokeWidth="4"
+                  />
+                  <path
+                    d="M24 82 C27 65 38 55 50 55 C62 55 73 65 76 82 Z"
+                    fill="#fff"
+                  />
+                  <circle cx="50" cy="37" r="17" fill="#fff" />
+                </svg>
               </button>
               {profileOpen && (
                 <ProfileSummaryCard
@@ -1250,7 +1305,74 @@ export default function DashboardPage({
           </div>
 
           <div className="dashboard-main-view">
-            <div className="main-camera-stage">
+            <div
+              className={`main-camera-stage ${
+                matchMode === "GROUP"
+                  ? `group-camera-stage group-size-${groupSize}`
+                  : ""
+              }`}
+            >
+              {matchMode === "GROUP" && (
+                <div className="group-camera-grid">
+                  {Array.from({ length: groupSize }).map((_, index) => {
+                    const isYou = index === 0;
+
+                    return (
+                      <div className="group-camera-tile" key={index}>
+                        {isYou && (
+                          <LocalVideo
+                            stream={cameraStream}
+                            className={`main-camera-stream ${hasCameraFeed ? "has-feed" : ""}`}
+                            muted
+                            mirror
+                          />
+                        )}
+                        {(!isYou || !hasCameraFeed) && (
+                          <div className="main-camera-fallback group-camera-fallback">
+                            {isYou && cameraStatus === "starting" && (
+                              <div className="camera-starting-pulse" />
+                            )}
+                            {isYou && profilePhoto && cameraStatus !== "starting" ? (
+                              <img
+                                src={profilePhoto}
+                                alt="Profile"
+                                className="slot-profile-photo slot-profile-photo--large"
+                              />
+                            ) : (
+                              <div className="camera-off-emblem">
+                                {isYou ? (
+                                  <CameraUnavailableIcon className="camera-unavailable-icon" />
+                                ) : (
+                                  <UsersRound size={48} strokeWidth={1.8} />
+                                )}
+                              </div>
+                            )}
+                            <h2>{isYou ? "Waiting to connect" : "Waiting for match"}</h2>
+                            <p>
+                              {isYou
+                                ? cameraMessage ||
+                                  (cameraStatus === "starting" ? "Starting camera..." : "")
+                                : "Screen ready"}
+                            </p>
+                          </div>
+                        )}
+                        <div className="main-camera-tag">
+                          <span
+                            className={
+                              isYou && hasCameraFeed
+                                ? "live-status-dot"
+                                : "offline-status-dot"
+                            }
+                          />
+                          {isYou
+                            ? `You - ${hasCameraFeed ? "Live" : "Camera off"}`
+                            : `Screen ${index + 1}`}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <LocalVideo
                 stream={cameraStream}
                 className={`main-camera-stream ${hasCameraFeed ? "has-feed" : ""}`}
@@ -1272,7 +1394,7 @@ export default function DashboardPage({
                     !profilePhoto &&
                     cameraStatus !== "starting" && (
                       <div className="camera-off-emblem">
-                        <VideoOff size={58} strokeWidth={1.8} />
+                        <CameraUnavailableIcon className="camera-unavailable-icon" />
                       </div>
                     )
                   )}
@@ -1354,7 +1476,11 @@ export default function DashboardPage({
             </div>
 
             {/* ── Mode pill ── */}
-            <div className="mode-selection-pill-container">
+            <div
+              className={`mode-selection-pill-container ${
+                matchMode === "GROUP" ? "mode-group-active" : "mode-solo-active"
+              }`}
+            >
               <button
                 className={`mode-pill-btn ${matchMode === "SOLO" ? "active" : ""}`}
                 onClick={() => setMatchMode("SOLO")}
@@ -1371,7 +1497,7 @@ export default function DashboardPage({
 
             {/* ── SOLO MODE ── */}
             {matchMode === "SOLO" && (
-              <>
+              <div className="mode-feature-panel mode-feature-panel--solo">
                 <div className="online-status-banner">
                   <span className="pulse-green-dot" />
                   11,000 people online now
@@ -1509,20 +1635,30 @@ export default function DashboardPage({
                     ? "Start Video Chat"
                     : "Waiting for camera…"}
                 </button>
-              </>
+              </div>
             )}
 
             {/* ── GROUP MODE ── */}
             {matchMode === "GROUP" && (
-              <GroupLobby
-                onJoin={handleGroupJoin}
-                onNavigateToPlus={onNavigateToPlus}
-                onCreateInvite={createInviteLink}
-              />
+              <div className="mode-feature-panel mode-feature-panel--group">
+                <GroupLobby
+                  selectedSize={groupSize}
+                  onSizeChange={setGroupSize}
+                  onJoin={handleGroupJoin}
+                  onNavigateToPlus={onNavigateToPlus}
+                  onCreateInvite={createInviteLink}
+                />
+              </div>
             )}
 
             {/* ── Footer ── */}
-            <footer className="sidebar-utility-footer">
+            <footer
+              className={`sidebar-utility-footer ${
+                matchMode === "SOLO"
+                  ? "sidebar-utility-footer--solo"
+                  : "sidebar-utility-footer--group"
+              }`}
+            >
               <button
                 className="footer-action-item gold-highlight"
                 onClick={onNavigateToPlus}
@@ -1531,6 +1667,7 @@ export default function DashboardPage({
                 <span className="footer-icon">⭐</span>
                 <span className="footer-label">Plus</span>
               </button>
+              {matchMode === "GROUP" && (
               <button
                 className="footer-action-item"
                 onClick={handleCopyInvite}
@@ -1547,11 +1684,12 @@ export default function DashboardPage({
                       : "Invite"}
                 </span>
               </button>
-              {inviteCopyMessage && (
+              )}
+              {matchMode === "GROUP" && inviteCopyMessage && (
                 <div className="footer-invite-message">{inviteCopyMessage}</div>
               )}
               <button
-                className="footer-action-item"
+                className="footer-action-item footer-action-item--more"
                 aria-label="More options"
                 onClick={() => alert("Settings coming soon")}
               >

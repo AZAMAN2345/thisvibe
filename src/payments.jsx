@@ -125,22 +125,21 @@ const Payment = ({ onBack, planAmount }) => {
       {onBack && (
         <button
           onClick={onBack}
-          style={{
-            position: "absolute",
-            top: "20px",
-            left: "20px",
-            padding: "10px 20px",
-            background: "#8B5CF6",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "600",
-            zIndex: 10,
-          }}
+          className="pay-back-button"
+          type="button"
+          aria-label="Back to plans"
         >
-          &larr; Back to Plans
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
         </button>
       )}
 
