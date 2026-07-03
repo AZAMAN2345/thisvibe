@@ -31,25 +31,37 @@ const vibePlusStyles = `
     top: 32px;
     left: 32px;
     background: transparent;
-    border: 1px solid var(--vp-border);
-    color: var(--vp-text-muted);
-    padding: 10px 20px;
-    border-radius: 100px;
+    border: 0;
+    color: #f06ee8;
+    padding: 0;
+    width: 74px;
+    height: 74px;
+    border-radius: 18px;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
+    filter:
+      drop-shadow(0 0 6px rgba(240, 110, 232, 0.82))
+      drop-shadow(0 0 18px rgba(168, 85, 247, 0.58))
+      drop-shadow(0 0 34px rgba(124, 58, 237, 0.36));
   }
 
   .vp-back-btn:hover {
-    color: var(--vp-text);
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.15);
+    color: #ef6ee6;
+    background: transparent;
     transform: translateX(-4px);
+    filter:
+      drop-shadow(0 0 8px rgba(240, 110, 232, 0.95))
+      drop-shadow(0 0 24px rgba(168, 85, 247, 0.72))
+      drop-shadow(0 0 44px rgba(124, 58, 237, 0.48));
+  }
+
+  .vp-back-btn svg {
+    width: 58px;
+    height: 58px;
+    stroke-width: 3.2;
   }
 
   .vp-container {
@@ -391,11 +403,10 @@ export default function VibePlusPage({ onBack }) {
 
       <div className="vp-wrapper">
         <button className="vp-back-btn" onClick={onBack} aria-label="Back to dashboard">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
-          Back
         </button>
 
         <div className="vp-container">

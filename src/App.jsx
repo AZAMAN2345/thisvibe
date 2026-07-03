@@ -59,7 +59,7 @@ export default function App() {
     };
   }, []);
 
-  // ── Handle email verification redirect from backend ───
+  // ──MARK: Handle email verification redirect from backend ───
   // ── Session checker — keeps user logged in ────────────
   useEffect(() => {
     if (!isAuthenticated || currentUserProfile?.localOnly || currentUserProfile?.setupOnly) {
