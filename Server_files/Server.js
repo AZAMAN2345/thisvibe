@@ -28,10 +28,7 @@ const loadEnvFile = (envPath) => {
       if (sepIdx === -1) return;
 
       const key = trimmed.slice(0, sepIdx).trim();
-      const value = trimmed
-        .slice(sepIdx + 1)
-        .trim()
-        .replace(/;$/, "");
+      const value = trimmed.slice(sepIdx + 1).trim().replace(/;$/, "");
 
       if (key && process.env[key] === undefined) {
         process.env[key] = value;
@@ -46,7 +43,9 @@ loadEnvFile(path.join(__dirname, ".env"));
 const app = express();
 const port = process.env.PORT || 3001;
 
-const frontendOrigins = (process.env.FRONTEND_ORIGIN || "http://localhost:5173")
+const frontendOrigins = (
+  process.env.FRONTEND_ORIGIN || "http://localhost:5173"
+)
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
@@ -85,7 +84,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+  })
 );
 
 app.use(express.json({ limit: "10mb" }));
@@ -117,12 +116,12 @@ app.get("/api/ice-servers", async (req, res) => {
       JSON.stringify({
         hasKeyId: !!keyId,
         hasKeySecret: !!keySecret,
-      }),
+      })
     );
 
     if (!keyId || !keySecret) {
       console.warn(
-        "[TURN] Missing Cloudflare credentials. Falling back to STUN.",
+        "[TURN] Missing Cloudflare credentials. Falling back to STUN."
       );
 
       return res.json([
@@ -142,7 +141,7 @@ app.get("/api/ice-servers", async (req, res) => {
         body: JSON.stringify({
           ttl: 86400,
         }),
-      },
+      }
     );
 
     const rawResponse = await response.text();
@@ -176,7 +175,7 @@ app.get("/api/ice-servers", async (req, res) => {
     }
 
     console.log(
-      `[TURN] Successfully generated ${iceServers.length} ICE server entries`,
+      `[TURN] Successfully generated ${iceServers.length} ICE server entries`
     );
 
     res.json(iceServers);
@@ -256,7 +255,7 @@ const matchSoloPeers = (first, second) => {
   second.data.role = "answerer";
 
   console.log(
-    `[MATCH] ${first.id} matched with ${second.id} in room ${roomId}`,
+    `[MATCH] ${first.id} matched with ${second.id} in room ${roomId}`
   );
 
   first.emit("matched", {
@@ -276,9 +275,15 @@ const queueSolo = (socket) => {
   removeFromQueue(socket);
 
   const waitingId = soloQueue.shift();
-  const waiting = waitingId ? io.sockets.sockets.get(waitingId) : null;
+  const waiting = waitingId
+    ? io.sockets.sockets.get(waitingId)
+    : null;
 
-  if (waiting && waiting.connected && !waiting.data.roomId) {
+  if (
+    waiting &&
+    waiting.connected &&
+    !waiting.data.roomId
+  ) {
     matchSoloPeers(waiting, socket);
     return;
   }
@@ -366,6 +371,8 @@ const startServer = () => {
 connectdb()
   .catch((err) => {
     console.warn(`MongoDB unavailable: ${err.message}`);
-    console.warn("Starting anyway so WebRTC signaling can be tested.");
+    console.warn(
+      "Starting anyway so WebRTC signaling can be tested."
+    );
   })
   .finally(startServer);
