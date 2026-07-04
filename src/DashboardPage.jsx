@@ -1,16 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
+  ChevronDown,
   Gamepad2,
-  Mars,
   MapPin,
   Maximize2,
   Minimize2,
   SkipForward,
   Star,
   User,
-  Users,
   UsersRound,
-  Venus,
   X,
 } from "lucide-react";
 import { useWebRTC } from "./useWebRTC";
@@ -368,32 +366,65 @@ function GroupLobby({
   onSizeChange,
   onJoin,
   onNavigateToPlus,
-  onCreateInvite,
+  onInvite,
+  isCopyingInvite,
+  copiedInvite,
+  inviteCopyMessage,
 }) {
   const [selectedGame, setSelectedGame] = useState("hotseat");
-  const [copied, setCopied] = useState(false);
-  const [copyMessage, setCopyMessage] = useState("");
-  const [isCreatingInvite, setIsCreatingInvite] = useState(false);
-
-  const handleCopy = async () => {
-    if (isCreatingInvite) return;
-    setCopyMessage("");
-    setIsCreatingInvite(true);
-
-    try {
-      await onCreateInvite();
-      setCopied(true);
-      setCopyMessage("Link copied");
-      setTimeout(() => {
-        setCopied(false);
-        setCopyMessage("");
-      }, 2500);
-    } catch (err) {
-      setCopyMessage(err.message || "Could not create invite link.");
-    } finally {
-      setIsCreatingInvite(false);
-    }
-  };
+  const [gameDropdownOpen, setGameDropdownOpen] = useState(false);
+  const games = [
+    {
+      id: "hotseat",
+      icon: "🔥",
+      name: "Hot Seat",
+      desc: "Answer or skip",
+      locked: false,
+    },
+    {
+      id: "wyr",
+      icon: "🗳️",
+      name: "Would You Rather",
+      desc: "Vote live",
+      locked: false,
+    },
+    {
+      id: "song",
+      icon: "🎶",
+      name: "Guess the Song",
+      desc: "First to name it",
+      locked: true,
+    },
+    {
+      id: "truth",
+      icon: "💬",
+      name: "Truth Burst",
+      desc: "Fast honest prompts",
+      locked: false,
+    },
+    {
+      id: "trivia",
+      icon: "⚡",
+      name: "Quick Trivia",
+      desc: "Beat the timer",
+      locked: false,
+    },
+    {
+      id: "dj",
+      icon: "🎧",
+      name: "DJ Mode",
+      desc: "Music challenges",
+      locked: true,
+    },
+    {
+      id: "charades",
+      icon: "🎭",
+      name: "Charades",
+      desc: "Act it out",
+      locked: true,
+    },
+  ];
+  const activeGame = games.find((game) => game.id === selectedGame) ?? games[0];
 
   return (
     <div className="group-lobby">
@@ -421,79 +452,68 @@ function GroupLobby({
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="gl-invite-box">
-        <div className="gl-invite-top">
-          <span className="gl-invite-icon">🔗</span>
-          <div>
-            <div className="gl-invite-title">
-              Bring a friend, meet a stranger
-            </div>
-            <div className="gl-invite-sub">
-              Invite someone — we add 1 random to make 3
-            </div>
-          </div>
-        </div>
-        <div className="gl-invite-flow">
-          <div className="gl-av you">👤</div>
-          <span className="gl-plus">+</span>
-          <div className="gl-av friend">🧑</div>
-          <span className="gl-plus">+</span>
-          <div className="gl-av stranger">❓</div>
-          <span className="gl-eq">=</span>
-          <span className="gl-result">3 people 🎉</span>
-        </div>
         <button
-          className="gl-copy-btn"
-          onClick={handleCopy}
-          disabled={isCreatingInvite}
+          className="footer-action-item footer-action-item--invite gl-invite-action"
+          onClick={onInvite}
+          aria-label="Copy invite link"
+          disabled={isCopyingInvite}
           type="button"
         >
-          {copied ? "✓ Copied!" : "🔗 Copy Invite Link"}
+          <span className="footer-icon">{copiedInvite ? "✓" : "🔗"}</span>
+          <span className="footer-label">
+            {isCopyingInvite ? "Copying..." : copiedInvite ? "Copied!" : "Invite"}
+          </span>
         </button>
-        {copyMessage && <div className="gl-invite-sub">{copyMessage}</div>}
+        {inviteCopyMessage && (
+          <div className="footer-invite-message gl-invite-message">
+            {inviteCopyMessage}
+          </div>
+        )}
       </div>
 
       <div className="gl-section">
         <p className="gl-section-label">PICK A GAME MODE</p>
-        <div className="gl-games-grid">
-          {[
-            {
-              id: "hotseat",
-              icon: "🔥",
-              name: "Hot Seat",
-              desc: "Answer or skip",
-              locked: false,
-            },
-            {
-              id: "wyr",
-              icon: "🗳️",
-              name: "Would You Rather",
-              desc: "Vote live",
-              locked: false,
-            },
-            {
-              id: "song",
-              icon: "🎶",
-              name: "Guess the Song",
-              desc: "First to name it",
-              locked: true,
-            },
-          ].map(({ id, icon, name, desc, locked }) => (
-            <div
-              key={id}
-              className={`gl-game-card ${selectedGame === id && !locked ? "chosen" : ""} ${locked ? "locked" : ""}`}
-              onClick={() => !locked && setSelectedGame(id)}
-            >
-              {locked && <span className="gl-plus-tag">PLUS</span>}
-              <span className="gl-game-icon">{icon}</span>
-              <div className="gl-game-info">
-                <div className="gl-game-name">{name}</div>
-                <div className="gl-game-desc">{desc}</div>
-              </div>
+        <div className="gl-game-dropdown">
+          <button
+            className={`gl-game-dropdown-trigger ${gameDropdownOpen ? "open" : ""}`}
+            type="button"
+            aria-expanded={gameDropdownOpen}
+            onClick={() => setGameDropdownOpen((open) => !open)}
+          >
+            <span className="gl-game-icon">{activeGame.icon}</span>
+            <span className="gl-game-info">
+              <span className="gl-game-name">{activeGame.name}</span>
+              <span className="gl-game-desc">{activeGame.desc}</span>
+            </span>
+            <ChevronDown
+              className="gl-game-chevron"
+              size={18}
+              strokeWidth={2.4}
+            />
+          </button>
+          {gameDropdownOpen && (
+            <div className="gl-games-grid">
+              {games.map(({ id, icon, name, desc, locked }) => (
+                <button
+                  key={id}
+                  className={`gl-game-card ${selectedGame === id && !locked ? "chosen" : ""} ${locked ? "locked" : ""}`}
+                  onClick={() => {
+                    if (locked) return;
+                    setSelectedGame(id);
+                    setGameDropdownOpen(false);
+                  }}
+                  type="button"
+                >
+                  {locked && <span className="gl-plus-tag">PLUS</span>}
+                  <span className="gl-game-icon">{icon}</span>
+                  <span className="gl-game-info">
+                    <span className="gl-game-name">{name}</span>
+                    <span className="gl-game-desc">{desc}</span>
+                  </span>
+                </button>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
@@ -1232,24 +1252,15 @@ export default function DashboardPage({
               {friendsOpen && <FriendsDropdown friends={friends} />}
             </div>
             <button className="call-top-pill" type="button" aria-label="Call History">
-              <img
-                src="/recent-clock-icon.png"
-                alt=""
-                className="top-action-icon-img"
-                aria-hidden="true"
-              />
+              <span className="call-top-symbol">◎</span>
             </button>
             <button
-              className="call-top-icon"
-              aria-label="Messages"
+              className="call-top-icon call-top-icon--premium"
+              aria-label="Open premium page"
               type="button"
+              onClick={onNavigateToPlus}
             >
-              <img
-                src="/message-send-icon.png"
-                alt=""
-                className="top-action-icon-img"
-                aria-hidden="true"
-              />
+              <span className="call-top-symbol">♛</span>
             </button>
             <div className="profile-menu-wrap">
               <button
@@ -1476,32 +1487,43 @@ export default function DashboardPage({
             </div>
 
             {/* ── Mode pill ── */}
-            <div
-              className={`mode-selection-pill-container ${
-                matchMode === "GROUP" ? "mode-group-active" : "mode-solo-active"
-              }`}
-            >
-              <button
-                className={`mode-pill-btn ${matchMode === "SOLO" ? "active" : ""}`}
-                onClick={() => setMatchMode("SOLO")}
+            <div className="match-mode-card">
+              <div className="sidebar-card-title">
+                <span className="sidebar-card-title-icon">✦</span>
+                Match mode
+              </div>
+              <div
+                className={`mode-selection-pill-container ${
+                  matchMode === "GROUP" ? "mode-group-active" : "mode-solo-active"
+                }`}
               >
-                SOLO
-              </button>
-              <button
-                className={`mode-pill-btn ${matchMode === "GROUP" ? "active" : ""}`}
-                onClick={() => setMatchMode("GROUP")}
-              >
-                GROUP
-              </button>
+                <button
+                  className={`mode-pill-btn ${matchMode === "SOLO" ? "active" : ""}`}
+                  onClick={() => setMatchMode("SOLO")}
+                >
+                  SOLO
+                </button>
+                <button
+                  className={`mode-pill-btn ${matchMode === "GROUP" ? "active" : ""}`}
+                  onClick={() => setMatchMode("GROUP")}
+                >
+                  GROUP
+                </button>
+              </div>
+            </div>
+
+            <div className="online-status-banner">
+              <span className="pulse-green-dot" />
+              <span className="heartbeat-sensor" aria-hidden="true" />
+              <span className="online-status-copy">
+                <span className="online-status-count">11,248</span>
+                <span className="online-status-text">people online now</span>
+              </span>
             </div>
 
             {/* ── SOLO MODE ── */}
             {matchMode === "SOLO" && (
               <div className="mode-feature-panel mode-feature-panel--solo">
-                <div className="online-status-banner">
-                  <span className="pulse-green-dot" />
-                  11,000 people online now
-                </div>
                 <div className="pref-wrap">
                   <button
                     className={`preference-navigation-anchor-btn ${prefOpen ? "open" : ""}`}
@@ -1605,24 +1627,29 @@ export default function DashboardPage({
                     </div>
                   )}
                 </div>
-                <div className="meet-preference-panel">
-                  <p>Who do you want to meet?</p>
-                  <div className="meet-preference-grid">
-                    {[
-                      { id: "Anyone", label: "Both", icon: Users },
-                      { id: "Female", label: "Female", icon: Venus },
-                      { id: "Male", label: "Male", icon: Mars },
-                    ].map(({ id, label, icon: Icon }) => (
-                      <button
-                        key={id}
-                        className={`meet-preference-card ${gender === id ? "active" : ""}`}
-                        type="button"
-                        onClick={() => setGender(id)}
-                      >
-                        <Icon size={25} strokeWidth={2.2} />
-                        <span>{label}</span>
-                      </button>
-                    ))}
+                <div className="solo-vibes-card">
+                  <div className="solo-vibes-art" aria-hidden="true">
+                    <svg viewBox="0 0 150 90" role="img">
+                      <path
+                        className="solo-orbit solo-orbit-one"
+                        d="M20 48 C44 20 105 20 130 48 C104 75 45 75 20 48Z"
+                      />
+                      <path
+                        className="solo-orbit solo-orbit-two"
+                        d="M34 50 C52 33 98 33 116 50 C96 66 53 66 34 50Z"
+                      />
+                      <path
+                        className="solo-heart"
+                        d="M75 70 C50 52 38 41 38 29 C38 18 46 11 56 11 C64 11 70 16 75 24 C80 16 86 11 94 11 C104 11 112 18 112 29 C112 41 100 52 75 70Z"
+                      />
+                      <path className="solo-spark solo-spark-a" d="M24 18 V33 M16 25 H32" />
+                      <path className="solo-spark solo-spark-b" d="M128 17 V29 M122 23 H134" />
+                      <path className="solo-spark solo-spark-c" d="M48 72 V82 M43 77 H53" />
+                    </svg>
+                  </div>
+                  <div className="solo-vibes-copy">
+                    <h3>Good vibes only</h3>
+                    <p>Be respectful and keep it positive.</p>
                   </div>
                 </div>
                 <button
@@ -1646,7 +1673,10 @@ export default function DashboardPage({
                   onSizeChange={setGroupSize}
                   onJoin={handleGroupJoin}
                   onNavigateToPlus={onNavigateToPlus}
-                  onCreateInvite={createInviteLink}
+                  onInvite={handleCopyInvite}
+                  isCopyingInvite={isCopyingInvite}
+                  copiedInvite={copiedInvite}
+                  inviteCopyMessage={inviteCopyMessage}
                 />
               </div>
             )}
@@ -1659,43 +1689,16 @@ export default function DashboardPage({
                   : "sidebar-utility-footer--group"
               }`}
             >
-              <button
-                className="footer-action-item gold-highlight"
-                onClick={onNavigateToPlus}
-                aria-label="Plus"
-              >
-                <span className="footer-icon">⭐</span>
-                <span className="footer-label">Plus</span>
-              </button>
-              {matchMode === "GROUP" && (
-              <button
-                className="footer-action-item"
-                onClick={handleCopyInvite}
-                aria-label="Copy invite link"
-                disabled={isCopyingInvite}
-                type="button"
-              >
-                <span className="footer-icon">{copiedInvite ? "✓" : "🔗"}</span>
-                <span className="footer-label">
-                  {isCopyingInvite
-                    ? "Copying..."
-                    : copiedInvite
-                      ? "Copied!"
-                      : "Invite"}
-                </span>
-              </button>
+              {matchMode === "SOLO" && (
+                <button
+                  className="footer-action-item footer-action-item--more"
+                  aria-label="More options"
+                  onClick={() => alert("Settings coming soon")}
+                >
+                  <span className="footer-icon">•••</span>
+                  <span className="footer-label">More</span>
+                </button>
               )}
-              {matchMode === "GROUP" && inviteCopyMessage && (
-                <div className="footer-invite-message">{inviteCopyMessage}</div>
-              )}
-              <button
-                className="footer-action-item footer-action-item--more"
-                aria-label="More options"
-                onClick={() => alert("Settings coming soon")}
-              >
-                <span className="footer-icon">•••</span>
-                <span className="footer-label">More</span>
-              </button>
             </footer>
           </aside>
 
@@ -1718,7 +1721,7 @@ export default function DashboardPage({
               onClick={onNavigateToPlus}
             >
               <Star size={16} fill="currentColor" />
-              Go Premium
+              <span>Go Premium</span>
             </button>
             <button
               className="premium-call-close"
