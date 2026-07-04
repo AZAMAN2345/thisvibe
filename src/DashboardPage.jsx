@@ -1627,31 +1627,33 @@ export default function DashboardPage({
                     </div>
                   )}
                 </div>
-                <div className="solo-vibes-card">
-                  <div className="solo-vibes-art" aria-hidden="true">
-                    <svg viewBox="0 0 150 90" role="img">
-                      <path
-                        className="solo-orbit solo-orbit-one"
-                        d="M20 48 C44 20 105 20 130 48 C104 75 45 75 20 48Z"
-                      />
-                      <path
-                        className="solo-orbit solo-orbit-two"
-                        d="M34 50 C52 33 98 33 116 50 C96 66 53 66 34 50Z"
-                      />
-                      <path
-                        className="solo-heart"
-                        d="M75 70 C50 52 38 41 38 29 C38 18 46 11 56 11 C64 11 70 16 75 24 C80 16 86 11 94 11 C104 11 112 18 112 29 C112 41 100 52 75 70Z"
-                      />
-                      <path className="solo-spark solo-spark-a" d="M24 18 V33 M16 25 H32" />
-                      <path className="solo-spark solo-spark-b" d="M128 17 V29 M122 23 H134" />
-                      <path className="solo-spark solo-spark-c" d="M48 72 V82 M43 77 H53" />
-                    </svg>
+                {!prefOpen && (
+                  <div className="solo-vibes-card">
+                    <div className="solo-vibes-art" aria-hidden="true">
+                      <svg viewBox="0 0 150 90" role="img">
+                        <path
+                          className="solo-orbit solo-orbit-one"
+                          d="M20 48 C44 20 105 20 130 48 C104 75 45 75 20 48Z"
+                        />
+                        <path
+                          className="solo-orbit solo-orbit-two"
+                          d="M34 50 C52 33 98 33 116 50 C96 66 53 66 34 50Z"
+                        />
+                        <path
+                          className="solo-heart"
+                          d="M75 70 C50 52 38 41 38 29 C38 18 46 11 56 11 C64 11 70 16 75 24 C80 16 86 11 94 11 C104 11 112 18 112 29 C112 41 100 52 75 70Z"
+                        />
+                        <path className="solo-spark solo-spark-a" d="M24 18 V33 M16 25 H32" />
+                        <path className="solo-spark solo-spark-b" d="M128 17 V29 M122 23 H134" />
+                        <path className="solo-spark solo-spark-c" d="M48 72 V82 M43 77 H53" />
+                      </svg>
+                    </div>
+                    <div className="solo-vibes-copy">
+                      <h3>Good vibes only</h3>
+                      <p>Be respectful and keep it positive.</p>
+                    </div>
                   </div>
-                  <div className="solo-vibes-copy">
-                    <h3>Good vibes only</h3>
-                    <p>Be respectful and keep it positive.</p>
-                  </div>
-                </div>
+                )}
                 <button
                   onClick={startMatching}
                   className="primary-match-action-btn"
