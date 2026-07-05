@@ -15,7 +15,7 @@
 
 /* ── Root layout ─────────────────────────────────────────── */
 .vibe-dashboard {
-  /* Call page overlay deepness: increase alpha values toward 1 for deeper purple. */
+  /* Call page overlay deepness: increase alpha values toward 1 for deeper purple. AB NA GAY */
   --call-overlay-start: 8, 5, 22;
   --call-overlay-mid: 18, 9, 48;
   --call-overlay-end: 7, 4, 18;
@@ -94,7 +94,7 @@
 /* ── Searching screen ── */
 .searching-screen {
   width: min(92vw, 1320px);
-  height: min(86vh, 760px);
+  height: min(85vh, 760px);
   display: flex;
   overflow: hidden;
   border: 1px solid rgba(139, 92, 246, 0.15);
