@@ -2312,7 +2312,7 @@
   grid-row: 2;
   width: auto;
   min-width: 0;
-  height: 105%;
+  height: 100%;
   padding: clamp(14px, 1vw, 18px);
   gap: clamp(9px, 0.7vw, 12px);
   border: 1px solid rgba(139, 92, 246, 0.26);
