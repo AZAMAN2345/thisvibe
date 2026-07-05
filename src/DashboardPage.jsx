@@ -517,6 +517,7 @@ function GroupLobby({
         </div>
       </div>
 
+      {false && (
       <div className="gl-premium-strip">
         <span className="gl-premium-star">⭐</span>
         <div className="gl-premium-text">
@@ -529,6 +530,7 @@ function GroupLobby({
           Get Plus
         </button>
       </div>
+      )}
 
       <button
         className="gl-join-btn"
