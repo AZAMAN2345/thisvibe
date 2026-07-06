@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+export const REPORT_REASON_VALUES = ["nudity", "harassment", "spam", "other"];
+
 const ReportSchema = new mongoose.Schema(
   {
     reporter: {
@@ -23,7 +25,8 @@ const ReportSchema = new mongoose.Schema(
     reason: {
       type: String,
       trim: true,
-      default: "Inappropriate behavior",
+      enum: REPORT_REASON_VALUES,
+      default: "other",
       maxlength: 500,
     },
     status: {

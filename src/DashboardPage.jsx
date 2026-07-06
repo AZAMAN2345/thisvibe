@@ -9,7 +9,6 @@ import {
   Link,
   MapPin,
   Maximize2,
-  MessageSquare,
   Minimize2,
   ShieldCheck,
   SkipForward,
@@ -42,22 +41,10 @@ const REPORT_REASONS = [
     icon: AlertCircle,
   },
   {
-    id: "hate",
-    title: "Hate speech",
-    desc: "Racism, sexism or hate-based content",
-    icon: MessageSquare,
-  },
-  {
     id: "spam",
     title: "Spam or scams",
     desc: "Fake links, promotions or scams",
     icon: Link,
-  },
-  {
-    id: "underage",
-    title: "Underage",
-    desc: "User appears to be under 18",
-    icon: ShieldCheck,
   },
   {
     id: "other",
@@ -1142,9 +1129,32 @@ export default function DashboardPage({
     joinGroupQueue({ gateChoice: null, groupSize: size, selectedGame: game });
   };
 
+  const openReportModal = () => {
+    if (!matchedPeer?.userId) {
+      setReportMessage("Unable to identify this user.");
+      return;
+    }
+
+    setReportMessage("");
+    setSelectedReportReason("");
+    setReportOpen(true);
+  };
+
+  const closeReportModal = () => {
+    if (isReporting) return;
+    setReportOpen(false);
+    setSelectedReportReason("");
+    setReportMessage("");
+  };
+
   const handleReportUser = async () => {
     if (!matchedPeer?.userId) {
       setReportMessage("Unable to identify this user.");
+      return;
+    }
+
+    if (!selectedReportReason) {
+      setReportMessage("Select a reason first.");
       return;
     }
 
@@ -1162,7 +1172,7 @@ export default function DashboardPage({
         body: JSON.stringify({
           reportedUserId: matchedPeer.userId,
           roomId: currentRoomId,
-          reason: "Reported during live call",
+          reason: selectedReportReason,
         }),
       });
       const data = await response.json();
@@ -1172,6 +1182,8 @@ export default function DashboardPage({
       }
 
       setReportMessage("Report submitted.");
+      setReportOpen(false);
+      setSelectedReportReason("");
     } catch (error) {
       setReportMessage(error.message || "Unable to submit report.");
     } finally {
@@ -1410,16 +1422,6 @@ export default function DashboardPage({
                   <SkipForward size={18} strokeWidth={2.4} />
                 </button>
                 <button
-                  className="call-center-action report-action"
-                  onClick={handleReportUser}
-                  aria-label="Report user"
-                  title="Report user"
-                  type="button"
-                  disabled={isReporting}
-                >
-                  <Flag size={17} strokeWidth={2.4} />
-                </button>
-                <button
                   className="call-center-action games-action"
                   onClick={() => setGamesOpen(true)}
                   aria-label="Open games"
@@ -1427,15 +1429,23 @@ export default function DashboardPage({
                 >
                   <Gamepad2 size={18} strokeWidth={2.4} />
                 </button>
-                {reportMessage && (
-                  <p className="report-status-message">{reportMessage}</p>
-                )}
               </div>
 
               {/* RIGHT — stranger's real video stream */}
               {/* remoteStream is null until WebRTC connects,
                   RemoteVideo shows "Connecting…" in that state */}
               <RemoteVideo stream={remoteStream} label="Stranger" />
+
+              <button
+                className="report-floating-btn"
+                onClick={openReportModal}
+                aria-label="Report user"
+                title="Report user"
+                type="button"
+                disabled={isReporting}
+              >
+                <Flag size={17} strokeWidth={2.4} />
+              </button>
 
               {/* End call button (top-right of right panel) */}
               <button
@@ -1446,6 +1456,24 @@ export default function DashboardPage({
               >
                 ✕
               </button>
+
+              {reportMessage && !reportOpen && (
+                <p className="report-toast-message">{reportMessage}</p>
+              )}
+
+              {reportOpen && (
+                <ReportModal
+                  selectedReason={selectedReportReason}
+                  isSubmitting={isReporting}
+                  message={reportMessage}
+                  onClose={closeReportModal}
+                  onReasonChange={(reason) => {
+                    setSelectedReportReason(reason);
+                    setReportMessage("");
+                  }}
+                  onSubmit={handleReportUser}
+                />
+              )}
 
               {gamesOpen && (
                 <GamesModal
