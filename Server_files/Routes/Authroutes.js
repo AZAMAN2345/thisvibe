@@ -45,4 +45,17 @@ router.get("/session", protect, (req, res) => {
   });
 });
 
+router.post("/logout", protect, async (req, res) => {
+  req.authUser.activeSessionId = null;
+  await req.authUser.save();
+
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+
+  res.json({ message: "Signed out" });
+});
+
 export default router;

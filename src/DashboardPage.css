@@ -291,10 +291,33 @@
 .call-center-action:hover {
   transform: scale(1.08);
 }
+.call-center-action:disabled {
+  cursor: wait;
+  opacity: 0.55;
+  transform: none;
+}
 .skip-action:hover {
   background: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.4);
   color: #fca5a5;
+}
+.report-action {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+.report-action:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.24);
+  border-color: rgba(251, 191, 36, 0.6);
+}
+.report-status-message {
+  width: 74px;
+  margin: 2px 0 0;
+  color: #d8c9ff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
 }
 .games-action {
   background: rgba(139, 92, 246, 0.12);
@@ -963,6 +986,8 @@
 }
 
 .icon-utility-btn {
+  position: relative;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
   color: #3d3560;
@@ -985,6 +1010,20 @@
   color: #a78bfa;
   background: rgba(139, 92, 246, 0.15);
   border-color: rgba(139, 92, 246, 0.4);
+}
+
+.profile-trigger-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}
+
+.icon-utility-btn .profile-trigger-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
 /* Profile dropdown */
@@ -1869,6 +1908,8 @@
 
 .call-top-pill,
 .call-top-icon {
+  position: relative;
+  overflow: hidden;
   width: 44px;
   height: 44px;
   min-width: 44px;
@@ -2647,7 +2688,7 @@
   display: grid;
   grid-template-columns: 128px minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 17px;
   background:
     radial-gradient(
       circle at 22% 50%,
@@ -3243,6 +3284,13 @@
 
   .group-lobby > .gl-section:nth-child(2) .gl-game-desc {
     font-size: clamp(8px, 0.51vw, 11px);
+  }
+
+}
+
+@media (width: 1920px) and (height: 1080px) {
+  .mode-feature-panel--solo.preferences-open .primary-match-action-btn {
+    display: none;
   }
 }
 

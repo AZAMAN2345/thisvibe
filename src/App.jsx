@@ -222,6 +222,28 @@ export default function App() {
     navigateWithTransition("/vibe-plus");
   };
 
+  const handleLogout = async () => {
+    const token = authTokenRef.current;
+    authTokenRef.current = null;
+    setIsAuthenticated(false);
+    setCurrentUserProfile(null);
+    setInitialMatchMode("SOLO");
+    setPendingMatchMode("SOLO");
+
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    fetch(`${API_BASE_URL}/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers,
+    }).catch(() => {
+      // The local session is already cleared, so network failures do not block sign out.
+    });
+
+    navigateWithTransition("/");
+  };
+
   const handleResetPasswordComplete = () => {
     setStartWithSignUp(false);
     navigateWithTransition("/signin");
@@ -272,6 +294,7 @@ export default function App() {
         currentUserProfile={currentUserProfile}
         initialMatchMode={initialMatchMode}
         onNavigateToPlus={handleNavigateToPlus}
+        onLogout={handleLogout}
         onProfileUpdate={handleProfileUpdate}
         authToken={authTokenRef.current}
       />

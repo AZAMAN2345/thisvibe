@@ -81,6 +81,7 @@ const data = await res.json();
 export function useWebRTC({
   localStream,
   username,
+  authToken,
   onMatched,
   onPeerLeft,
   onChatMessage,
@@ -208,16 +209,17 @@ export function useWebRTC({
 
     const socket = io(SERVER_URL, {
       transports: ["websocket"],
+      auth: authToken ? { token: authToken } : undefined,
     });
     socketRef.current = socket;
 
     // ── Matched with a partner ────────────────────────────
-    socket.on("matched", async ({ roomId, role, mode }) => {
+    socket.on("matched", async ({ roomId, role, mode, peer }) => {
       console.log(`[Socket] Matched — Room: ${roomId} | Role: ${role} | Mode: ${mode}`);
       roomIdRef.current = roomId;
       roleRef.current   = role;
       setConnectionState("connecting");
-      onMatchedRef.current?.({ roomId, role, mode });
+      onMatchedRef.current?.({ roomId, role, mode, peer });
 
       // await so TURN credentials are ready before offer/answer
       const pc = await createPeerConnection();

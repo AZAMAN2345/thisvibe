@@ -1,13 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
+  AlertCircle,
   ChevronDown,
+  ChevronRight,
+  CircleEllipsis,
+  Flag,
   Gamepad2,
+  Link,
   MapPin,
   Maximize2,
+  MessageSquare,
   Minimize2,
+  ShieldCheck,
   SkipForward,
   Star,
-  User,
+  UserRound,
   UsersRound,
   X,
 } from "lucide-react";
@@ -18,8 +25,47 @@ import "./DashboardPage.css";
 const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || "")
   .replace(/\/api\/auth\/?$/, "")
   .replace(/\/$/, "");
+const REPORTS_API_BASE_URL = `${API_ORIGIN}/api/reports`;
 const ROOMS_API_BASE_URL = `${API_ORIGIN}/api/rooms`;
 const INVITE_SHARE_MESSAGE = "Join us and vibe";
+const REPORT_REASONS = [
+  {
+    id: "nudity",
+    title: "Nudity or sexual content",
+    desc: "Exposed body or inappropriate acts",
+    icon: UserRound,
+  },
+  {
+    id: "harassment",
+    title: "Harassment or bullying",
+    desc: "Threats, abusive or harmful behavior",
+    icon: AlertCircle,
+  },
+  {
+    id: "hate",
+    title: "Hate speech",
+    desc: "Racism, sexism or hate-based content",
+    icon: MessageSquare,
+  },
+  {
+    id: "spam",
+    title: "Spam or scams",
+    desc: "Fake links, promotions or scams",
+    icon: Link,
+  },
+  {
+    id: "underage",
+    title: "Underage",
+    desc: "User appears to be under 18",
+    icon: ShieldCheck,
+  },
+  {
+    id: "other",
+    title: "Other",
+    desc: "Something else we should know",
+    icon: CircleEllipsis,
+  },
+];
 
 // ===== Invite Clipboard Helper =====
 const copyTextToClipboard = async (text) => {
@@ -168,6 +214,86 @@ function RemoteVideo({ stream, label = "Stranger" }) {
 
 // ── MARK: GamesModal ────────────────────────────────────────────
 // Unchanged from previous version.
+function ReportModal({
+  selectedReason,
+  isSubmitting,
+  message,
+  onClose,
+  onReasonChange,
+  onSubmit,
+}) {
+  return (
+    <div className="report-modal-overlay" onClick={onClose}>
+      <div
+        className="report-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-modal-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          className="report-modal-close"
+          type="button"
+          aria-label="Close report dialog"
+          onClick={onClose}
+        >
+          <X size={28} strokeWidth={2.2} />
+        </button>
+        <header className="report-modal-header">
+          <div className="report-modal-flag" aria-hidden="true">
+            <Flag size={38} strokeWidth={2.1} />
+          </div>
+          <div>
+            <h2 id="report-modal-title">Report User</h2>
+            <p>Help us keep The Vibe safe for everyone.</p>
+          </div>
+        </header>
+
+        <div className="report-reason-section">
+          <h3>Select a reason</h3>
+          <div className="report-reason-list">
+            {REPORT_REASONS.map(({ id, title, desc, icon: Icon }) => (
+              <button
+                key={id}
+                className={`report-reason-option ${
+                  selectedReason === id ? "selected" : ""
+                }`}
+                type="button"
+                onClick={() => onReasonChange(id)}
+              >
+                <span className={`report-reason-icon report-reason-icon--${id}`}>
+                  <Icon size={27} strokeWidth={2.2} />
+                </span>
+                <span className="report-reason-copy">
+                  <strong>{title}</strong>
+                  <span>{desc}</span>
+                </span>
+                <ChevronRight
+                  className="report-reason-chevron"
+                  size={26}
+                  strokeWidth={2.2}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {message && <p className="report-modal-message">{message}</p>}
+
+        <button
+          className="report-submit-button"
+          type="button"
+          onClick={onSubmit}
+          disabled={isSubmitting || !selectedReason}
+        >
+          <ShieldCheck size={25} strokeWidth={2.2} />
+          {isSubmitting ? "Submitting..." : "Submit Report"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function GamesModal({ selectedGame, onClose }) {
   const games = [
     {
@@ -731,6 +857,12 @@ export default function DashboardPage({
   // ===== Call Messaging State =====
   // ── Incoming chat messages from stranger ─────────────
   const [incomingMessages, setIncomingMessages] = useState([]);
+  const [currentRoomId, setCurrentRoomId] = useState("");
+  const [matchedPeer, setMatchedPeer] = useState(null);
+  const [isReporting, setIsReporting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState("");
+  const [reportMessage, setReportMessage] = useState("");
 
   // ── Refs ──────────────────────────────────────────────
   const dashboardRef = useRef(null);
@@ -760,9 +892,16 @@ export default function DashboardPage({
   } = useWebRTC({
     localStream: cameraStream,
     username,
-    onMatched: ({ roomId, role, mode }) => {
+    authToken,
+    onMatched: ({ roomId, peer }) => {
       // Called the moment we are paired with someone.
       // Reset quote animation and close any open panels.
+      setCurrentRoomId(roomId || "");
+      setMatchedPeer(peer || null);
+      setReportMessage("");
+      setIsReporting(false);
+      setReportOpen(false);
+      setSelectedReportReason("");
       setQuote(RANDOM_QUOTES[0]);
       setQuoteKey(0);
       setChatOpen(false);
@@ -772,6 +911,12 @@ export default function DashboardPage({
     },
     onPeerLeft: () => {
       // Called when the stranger disconnects mid-call.
+      setCurrentRoomId("");
+      setMatchedPeer(null);
+      setReportMessage("");
+      setIsReporting(false);
+      setReportOpen(false);
+      setSelectedReportReason("");
       setChatOpen(false);
       setGamesOpen(false);
     },
@@ -935,6 +1080,12 @@ export default function DashboardPage({
     setProfileOpen(false);
     setGamesOpen(false);
     setIncomingMessages([]);
+    setCurrentRoomId("");
+    setMatchedPeer(null);
+    setReportMessage("");
+    setIsReporting(false);
+    setReportOpen(false);
+    setSelectedReportReason("");
     joinSoloQueue();
   };
 
@@ -942,6 +1093,12 @@ export default function DashboardPage({
   const handleEndCall = () => {
     setChatOpen(false);
     setGamesOpen(false);
+    setCurrentRoomId("");
+    setMatchedPeer(null);
+    setReportMessage("");
+    setIsReporting(false);
+    setReportOpen(false);
+    setSelectedReportReason("");
     endCall();
   };
 
@@ -950,11 +1107,23 @@ export default function DashboardPage({
     setChatOpen(false);
     setGamesOpen(false);
     setIncomingMessages([]);
+    setCurrentRoomId("");
+    setMatchedPeer(null);
+    setReportMessage("");
+    setIsReporting(false);
+    setReportOpen(false);
+    setSelectedReportReason("");
     skipStranger();
   };
 
   // Quit — leave the queue without starting a call
   const handleQuitQueue = () => {
+    setCurrentRoomId("");
+    setMatchedPeer(null);
+    setReportMessage("");
+    setIsReporting(false);
+    setReportOpen(false);
+    setSelectedReportReason("");
     leaveQueue();
   };
 
@@ -964,7 +1133,50 @@ export default function DashboardPage({
     setChatOpen(false);
     setProfileOpen(false);
     setIncomingMessages([]);
+    setCurrentRoomId("");
+    setMatchedPeer(null);
+    setReportMessage("");
+    setIsReporting(false);
+    setReportOpen(false);
+    setSelectedReportReason("");
     joinGroupQueue({ gateChoice: null, groupSize: size, selectedGame: game });
+  };
+
+  const handleReportUser = async () => {
+    if (!matchedPeer?.userId) {
+      setReportMessage("Unable to identify this user.");
+      return;
+    }
+
+    setIsReporting(true);
+    setReportMessage("");
+
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+
+      const response = await fetch(REPORTS_API_BASE_URL, {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify({
+          reportedUserId: matchedPeer.userId,
+          roomId: currentRoomId,
+          reason: "Reported during live call",
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to submit report.");
+      }
+
+      setReportMessage("Report submitted.");
+    } catch (error) {
+      setReportMessage(error.message || "Unable to submit report.");
+    } finally {
+      setIsReporting(false);
+    }
   };
 
   const handleToggleFullscreen = async () => {
@@ -1198,6 +1410,16 @@ export default function DashboardPage({
                   <SkipForward size={18} strokeWidth={2.4} />
                 </button>
                 <button
+                  className="call-center-action report-action"
+                  onClick={handleReportUser}
+                  aria-label="Report user"
+                  title="Report user"
+                  type="button"
+                  disabled={isReporting}
+                >
+                  <Flag size={17} strokeWidth={2.4} />
+                </button>
+                <button
                   className="call-center-action games-action"
                   onClick={() => setGamesOpen(true)}
                   aria-label="Open games"
@@ -1205,6 +1427,9 @@ export default function DashboardPage({
                 >
                   <Gamepad2 size={18} strokeWidth={2.4} />
                 </button>
+                {reportMessage && (
+                  <p className="report-status-message">{reportMessage}</p>
+                )}
               </div>
 
               {/* RIGHT — stranger's real video stream */}
@@ -1274,26 +1499,34 @@ export default function DashboardPage({
                   setFriendsOpen(false);
                 }}
               >
-                <svg
-                  className="profile-avatar-icon"
-                  viewBox="0 0 100 100"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="46"
-                    fill="#7c3aed"
-                    stroke="#05020f"
-                    strokeWidth="4"
+                {profilePhoto ? (
+                  <img
+                    src={profilePhoto}
+                    alt="Profile"
+                    className="profile-trigger-photo"
                   />
-                  <path
-                    d="M24 82 C27 65 38 55 50 55 C62 55 73 65 76 82 Z"
-                    fill="#fff"
-                  />
-                  <circle cx="50" cy="37" r="17" fill="#fff" />
-                </svg>
+                ) : (
+                  <svg
+                    className="profile-avatar-icon"
+                    viewBox="0 0 100 100"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="46"
+                      fill="#7c3aed"
+                      stroke="#05020f"
+                      strokeWidth="4"
+                    />
+                    <path
+                      d="M24 82 C27 65 38 55 50 55 C62 55 73 65 76 82 Z"
+                      fill="#fff"
+                    />
+                    <circle cx="50" cy="37" r="17" fill="#fff" />
+                  </svg>
+                )}
               </button>
               {profileOpen && (
                 <ProfileSummaryCard
@@ -1460,6 +1693,13 @@ export default function DashboardPage({
                     aria-label="Profile"
                     type="button"
                   >
+                    {profilePhoto && (
+                      <img
+                        src={profilePhoto}
+                        alt="Profile"
+                        className="profile-trigger-photo"
+                      />
+                    )}
                     👤
                   </button>
                   {profileOpen && (
@@ -1525,7 +1765,11 @@ export default function DashboardPage({
 
             {/* ── SOLO MODE ── */}
             {matchMode === "SOLO" && (
-              <div className="mode-feature-panel mode-feature-panel--solo">
+              <div
+                className={`mode-feature-panel mode-feature-panel--solo ${
+                  prefOpen ? "preferences-open" : ""
+                }`}
+              >
                 <div className="pref-wrap">
                   <button
                     className={`preference-navigation-anchor-btn ${prefOpen ? "open" : ""}`}

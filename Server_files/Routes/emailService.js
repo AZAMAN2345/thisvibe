@@ -16,10 +16,7 @@ const getFrontendOrigin = () => {
     process.env.FRONTEND_ORIGIN ||
     "http://localhost:5173";
 
-  return configured
-    .split(",")[0]
-    .trim()
-    .replace(/\/$/, "");
+  return configured.split(",")[0].trim().replace(/\/$/, "");
 };
 
 // ===== Password Reset Link Builder =====

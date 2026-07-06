@@ -19,11 +19,11 @@ const UserSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-tier: {
+    tier: {
       type: String,
       enum: ["free", "pro", "premium", "enterprise"],
       default: "free",
-},
+    },
     isEmailVerified: {
       type: Boolean,
       default: false,
@@ -55,6 +55,25 @@ tier: {
       default: null,
       index: true,
     },
+    isBanned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    banReason: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    bannedUntil: {
+      type: Date,
+      default: null,
+    },
+    reportCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     usernameChangedAt: {
       type: Date,
       default: null,
@@ -69,6 +88,10 @@ tier: {
         type: String,
         trim: true,
         default: "",
+      },
+      isBanned: {
+        type: Boolean,
+        default: false,
       },
       lookingFor: {
         type: String,
@@ -105,5 +128,3 @@ tier: {
 const User = mongoose.model("User", UserSchema);
 
 export default User;
-
-

@@ -4,11 +4,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import cookieParser from "cookie-parser";
 import express from "express";
+import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
 import authroutes from "./Routes/Authroutes.js";
+import reportroutes from "./Routes/Reportroutes.js";
 import roomroutes from "./Routes/Roomroutes.js";
 import connectdb from "./mongoconnect.js";
 import cors from "cors";
+import User from "./Models/UserModel.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,6 +96,7 @@ app.use(cookieParser());
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api/auth", authroutes);
+app.use("/api/reports", reportroutes);
 app.use("/api/rooms", roomroutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
@@ -192,6 +196,34 @@ app.get("/api/ice-servers", async (req, res) => {
 const soloQueue = [];
 const activeRooms = new Map();
 
+io.use(async (socket, next) => {
+  const token = String(socket.handshake.auth?.token || "").trim();
+  if (!token || !process.env.JWT_SECRET) return next();
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select(
+      "username activeSessionId isBanned bannedUntil",
+    );
+
+    if (
+      user &&
+      decoded.sessionId &&
+      decoded.sessionId === user.activeSessionId
+    ) {
+      socket.data.userId = String(user._id);
+      socket.data.username = user.username;
+      socket.data.isBanned =
+        user.isBanned &&
+        (!user.bannedUntil || user.bannedUntil.getTime() > Date.now());
+    }
+  } catch {
+    // Anonymous sockets are still allowed, but they cannot be reported by user id.
+  }
+
+  next();
+});
+
 const removeFromQueue = (socket) => {
   const idx = soloQueue.indexOf(socket.id);
 
@@ -262,12 +294,20 @@ const matchSoloPeers = (first, second) => {
     roomId,
     role: "caller",
     mode: "solo",
+    peer: {
+      userId: second.data.userId || null,
+      username: second.data.username || "Stranger",
+    },
   });
 
   second.emit("matched", {
     roomId,
     role: "answerer",
     mode: "solo",
+    peer: {
+      userId: first.data.userId || null,
+      username: first.data.username || "Stranger",
+    },
   });
 };
 
@@ -299,14 +339,14 @@ io.on("connection", (socket) => {
   console.log("[SOCKET] Connected:", socket.id);
 
   socket.on("join-solo-queue", ({ username } = {}) => {
-    socket.data.username = username || "Stranger";
+    socket.data.username = socket.data.username || username || "Stranger";
 
     leaveCurrentRoom(socket);
     queueSolo(socket);
   });
 
   socket.on("join-group-queue", ({ username } = {}) => {
-    socket.data.username = username || "Stranger";
+    socket.data.username = socket.data.username || username || "Stranger";
 
     leaveCurrentRoom(socket);
     queueSolo(socket);
